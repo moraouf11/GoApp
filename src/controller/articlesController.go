@@ -12,59 +12,61 @@ import (
 	"github.com/gorilla/mux"
 )
 
-func getArticlesFromDb() []models.Article {
-	var Articles []models.Article
-	sqlserver.Database.Find(&Articles)
-	return Articles
+func getJobsromDb() []models.Job {
+	var Jobs []models.Job
+	sqlserver.Database.Find(&Jobs)
+	return Jobs
 }
 
-func allArticles(w http.ResponseWriter, r *http.Request) {
-	utils.JsonResponse(w, getArticlesFromDb())
+func allJobs(w http.ResponseWriter, r *http.Request) {
+	utils.JsonResponse(w, getJobsromDb())
 }
 
-func getArticle(w http.ResponseWriter, r *http.Request) {
-	id := mux.Vars(r)["id"]
+func getJobWithBids(w http.ResponseWriter, r *http.Request) {
+	id := mux.Vars(r)["jobKey"]
 
-	var article models.Article
+	var bids models.Bid
+	//db.Joins("Company", db.Where(&Company{Alive: true})).Find(&users)
 
-	result := sqlserver.Database.Where("Id = ?", id).First(&article)
+	//result := sqlserver.Database.Where("Id = ?", id).First(&job)
+	result := sqlserver.Database.Joins("Job", sqlserver.Database.Where(&models.Job{JobKey: id})).Find(&bids)
 	if result.Error == nil {
-		utils.JsonResponse(w, article)
+		utils.JsonResponse(w, bids)
 	}
 }
 
-func createArticle(w http.ResponseWriter, r *http.Request) {
+func createJob(w http.ResponseWriter, r *http.Request) {
 	reqBody, _ := ioutil.ReadAll(r.Body)
-	var newArticle models.Article
+	var newJob models.Job
 
-	utils.JsonDeserialize(reqBody, &newArticle)
+	utils.JsonDeserialize(reqBody, &newJob)
 
-	result := sqlserver.Database.Create(&newArticle)
+	result := sqlserver.Database.Create(&newJob)
 	fmt.Println(result.Error)
 
 	utils.JsonResponse(w, models.BaseResult{
 		Result:  true,
-		Message: "Article has been created",
+		Message: "Job has been created",
 	})
 }
 
-func deleteArticle(w http.ResponseWriter, r *http.Request) {
+func deleteJob(w http.ResponseWriter, r *http.Request) {
 	id := mux.Vars(r)["id"]
-	var deletedArticle models.Article
-	result := sqlserver.Database.Where("Id = ?", id).Delete(deletedArticle)
+
+	result := sqlserver.Database.Model(&models.Job{}).Where("Id = ?", id).Update("IsActive", false)
 	fmt.Println(result.Error)
 
 	utils.JsonResponse(w, models.BaseResult{
 		Result:  true,
-		Message: "Article has been deleted",
+		Message: "Job has been deleted",
 	})
 }
 
 func HandleRequests() {
 	myrouter := mux.NewRouter().StrictSlash(false)
-	myrouter.HandleFunc("/articles", allArticles).Methods("GET")
-	myrouter.HandleFunc("/article/{id}", getArticle).Methods("GET")
-	myrouter.HandleFunc("/article/{id}", deleteArticle).Methods("DELETE")
-	myrouter.HandleFunc("/article", createArticle).Methods("POST")
-	log.Fatal(http.ListenAndServe(":8080", myrouter))
+	myrouter.HandleFunc("/jobs", allJobs).Methods("GET")
+	myrouter.HandleFunc("/jobs/{id}", getJobWithBids).Methods("GET")
+	myrouter.HandleFunc("/jobs/{id}", deleteJob).Methods("DELETE")
+	myrouter.HandleFunc("/jobs", createJob).Methods("POST")
+	log.Fatal(http.ListenAndServe(":8085", myrouter))
 }

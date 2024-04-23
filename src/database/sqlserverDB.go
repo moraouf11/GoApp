@@ -11,12 +11,12 @@ import (
 var Database *gorm.DB
 
 func Init() {
-	dsn := "sqlserver://gorm:gormTest1234@DESKTOP-SS75E3K\\TEW_SQLEXPRESS?database=articles"
+	dsn := "sqlserver://gorm:gormTest1234@DESKTOP-SS75E3K?database=jobs"
 	var err error
 	Database,
 		err = gorm.Open(sqlserver.Open(dsn), &gorm.Config{})
 
-	Database.AutoMigrate(&models.Article{})
+	Database.AutoMigrate(&models.Job{}, &models.Bid{})
 	if err != nil {
 		fmt.Println(err.Error())
 	}
