@@ -21,3 +21,4 @@ func Init() {
 		fmt.Println(err.Error())
 	}
 }
+
